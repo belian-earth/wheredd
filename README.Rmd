@@ -117,7 +117,7 @@ The database contains one table (`carbon_projects`) with:
 
 - **One row per project per area type** (project, accounting, reference)
 - **area_role**: Type of boundary (project/accounting/reference)
-- **geometry_wkb**: Geometry as WKB BLOB (use `sf::st_as_sf(wkb = ...)`)
+- **geometry**: Geometry as WKB BLOB (use `sf::st_as_sf(wkb = ...)`)
 - **Metadata**: Project name, registry, dates, country, etc.
 - **Ordered by**: continent → country → id
 
@@ -149,14 +149,14 @@ The `carbon_projects` table contains the following columns:
 | `processing_approach` | VARCHAR | Method used to obtain boundary data: "Official" (from project developer), "Georeferenced" (from documents), "Linear" (traced from maps), or "Method" (derived from methodology) |
 | `pd_declined` | VARCHAR | Whether the project developer declined to provide geometry (Yes/No/N/A) |
 | `filename` | VARCHAR | Source parquet file URL from which this record was read |
-| `geometry_wkb` | BLOB | Well-Known Binary representation of the project boundary (convert to sf using `st_as_sf(wkb = "geometry_wkb", crs = 4326)`) |
+| `geometry` | BLOB | Well-Known Binary representation of the project boundary (convert to sf using `st_as_sf(wkb = "geometry", crs = 4326)`) |
 
 ```{=gfm}
 > [!NOTE]
 > - Each project may appear 1-3 times depending on available boundary types (project/accounting/reference areas)
+> - Both point and polygon geometries are supported - polygons are extracted from geometry collections
 > - Empty geometries are filtered out during database creation
 > - All geometries are validated, forced to 2D (Z coordinates removed), and stored as WKB BLOBs
-> - Both point and polygon geometries are supported (collections are extracted to individual types)
 > - Data is ordered by continent → country → id.
 ``` 
 

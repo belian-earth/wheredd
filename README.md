@@ -41,7 +41,7 @@ library(wheredd)
 
 # just get the urls and download yourself...
 carbon_proj_release_url()
-#> [1] "https://github.com/belian-earth/wheredd/releases/download/v0.1.0/forest_carbon_boundaries.parquet"
+#> [1] "https://github.com/belian-earth/wheredd/releases/download/v0.2.0/forest_carbon_boundaries.parquet"
 # or for access to the original source data urls...
 carbon_proj_source_urls()
 #> https://data.source.coop/cecil/forest-carbon-boundaries/africa.parquet
@@ -58,7 +58,7 @@ db_path <- carbon_proj_db()
 #> ── wheredd Database Information ────────────────────────────────────────────────
 #> Database path: '~/.cache/wheredd/wheredd_db.duckdb'
 #> Table name: carbon_projects
-#> Database created on: 2026-02-05 17:36:26.629469
+#> Database created on: 2026-02-05 21:19:49.476981
 #> Database size: 12K
 #> Number of records: 694
 #> Number of columns: 16
@@ -107,7 +107,7 @@ projects
 #> # ℹ 9 more variables: country <chr>, project_developer <chr>,
 #> #   project_start_date <chr>, project_end_date <chr>, entry_date <chr>,
 #> #   processing_approach <chr>, pd_declined <chr>, filename <chr>,
-#> #   geometry_wkb <list>
+#> #   geometry <list>
 
 dbDisconnect(con, shutdown = TRUE)
 ```
@@ -148,7 +148,7 @@ The database contains one table (`carbon_projects`) with:
 
 - **One row per project per area type** (project, accounting, reference)
 - **area_role**: Type of boundary (project/accounting/reference)
-- **geometry_wkb**: Geometry as WKB BLOB (use `sf::st_as_sf(wkb = ...)`)
+- **geometry**: Geometry as WKB BLOB (use `sf::st_as_sf(wkb = ...)`)
 - **Metadata**: Project name, registry, dates, country, etc.
 - **Ordered by**: continent → country → id
 
@@ -182,13 +182,13 @@ The `carbon_projects` table contains the following columns:
 | `processing_approach` | VARCHAR | Method used to obtain boundary data: “Official” (from project developer), “Georeferenced” (from documents), “Linear” (traced from maps), or “Method” (derived from methodology) |
 | `pd_declined` | VARCHAR | Whether the project developer declined to provide geometry (Yes/No/N/A) |
 | `filename` | VARCHAR | Source parquet file URL from which this record was read |
-| `geometry_wkb` | BLOB | Well-Known Binary representation of the project boundary (convert to sf using `st_as_sf(wkb = "geometry_wkb", crs = 4326)`) |
+| `geometry` | BLOB | Well-Known Binary representation of the project boundary (convert to sf using `st_as_sf(wkb = "geometry", crs = 4326)`) |
 
 > [!NOTE]
 > - Each project may appear 1-3 times depending on available boundary types (project/accounting/reference areas)
+> - Both point and polygon geometries are supported - polygons are extracted from geometry collections
 > - Empty geometries are filtered out during database creation
 > - All geometries are validated, forced to 2D (Z coordinates removed), and stored as WKB BLOBs
-> - Both point and polygon geometries are supported (collections are extracted to individual types)
 > - Data is ordered by continent → country → id.
 
 ## Original Data Info and Attributions:
