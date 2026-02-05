@@ -13,6 +13,7 @@ The list contains:
 \item \code{db_path}: Full path to the database file
 \item \code{db_date}: Timestamp of database creation
 \item \code{db_size}: Size of the database file (fs_bytes object)
+\item \code{table_name}: Name of the main table in the database
 \item \code{nrecords}: Total number of records in the database
 \item \code{ncols}: Total number of columns in the database
 }

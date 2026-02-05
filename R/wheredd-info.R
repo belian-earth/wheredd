@@ -16,26 +16,30 @@
 #' - `db_path`: Full path to the database file
 #' - `db_date`: Timestamp of database creation
 #' - `db_size`: Size of the database file
-#' - `nrecords`: Total number of records in redd_projects table
-#' - `ncols`: Total number of columns in redd_projects table
+#' - `table_name`: Name of the main table in the database
+#' - `nrecords`: Total number of records in the table
+#' - `ncols`: Total number of columns in the table
 #'
 #' @noRd
 #' @keywords internal
 build_whereredd_info <- function(con, db_path) {
+  table_name <- "carbon_projects"
+
   nrecords <- DBI::dbGetQuery(
     con,
-    "SELECT COUNT(*) AS n FROM redd_projects"
+    glue::glue_sql("SELECT COUNT(*) AS n FROM {`table_name`}", .con = con)
   )$n
 
   ncols <- DBI::dbGetQuery(
     con,
-    "SELECT COUNT(*) FROM (DESCRIBE redd_projects)"
+    glue::glue_sql("SELECT COUNT(*) FROM (DESCRIBE {`table_name`})", .con = con)
   )$count
 
   whereredd_info <- list(
     db_path = db_path,
     db_date = Sys.time(),
     db_size = fs::file_size(db_path),
+    table_name = table_name,
     nrecords = nrecords,
     ncols = ncols
   )
@@ -77,7 +81,7 @@ nowheredd_db_message <- function(dbpath) {
 #' cache directory. Throws an error if the file does not exist.
 #'
 #' @return A list containing wheredd database metadata (path, date, size,
-#'   record count, column count).
+#'   table name, record count, column count).
 #'
 #' @details
 #' This function looks for the info file at:
@@ -128,6 +132,7 @@ wheredd_db_path <- function() {
 #'   - `db_path`: Full path to the database file
 #'   - `db_date`: Timestamp of database creation
 #'   - `db_size`: Size of the database file (fs_bytes object)
+#'   - `table_name`: Name of the main table in the database
 #'   - `nrecords`: Total number of records in the database
 #'   - `ncols`: Total number of columns in the database
 #'
@@ -157,6 +162,7 @@ whereredd_info <- function() {
   whereredd_info <- readRDS(info_path)
   cli::cli_h1("wheredd Database Information")
   cli::cli_text("Database path: {.path {whereredd_info$db_path}}")
+  cli::cli_text("Table name: {.field {whereredd_info$table_name}}")
   cli::cli_text("Database created on: {.field {whereredd_info$db_date}}")
   cli::cli_text(
     "Database size: {.field {format(whereredd_info$db_size, units = 'auto')}}"

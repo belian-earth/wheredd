@@ -148,7 +148,7 @@ carbon_proj_db <- function(
 carbon_proj_db_release <- function(con, continents, tag) {
   url <- carbon_proj_release_url(tag = tag)
   q <- glue::glue_sql(
-    "CREATE TABLE redd_projects AS
+    "CREATE TABLE carbon_projects AS
        SELECT *
          FROM read_parquet({url})
         WHERE continent IN ({continents*})
@@ -274,7 +274,7 @@ carbon_proj_db_src <- function(
     glue::glue_sql_collapse(sep = "\n\n     UNION ALL\n\n     ")
 
   q <- glue::glue_sql(
-    "   CREATE TABLE redd_projects AS
+    "   CREATE TABLE carbon_projects AS
         SELECT * FROM (
            WITH source AS (
                    SELECT *,
@@ -327,7 +327,7 @@ carbon_proj_db_to_file <- function(
   }
 
   q <- glue::glue_sql(
-    "COPY redd_projects TO {dest_path} (FORMAT 'parquet', COMPRESSION 'zstd');",
+    "COPY carbon_projects TO {dest_path} (FORMAT 'parquet', COMPRESSION 'zstd');",
     .con = con
   )
 

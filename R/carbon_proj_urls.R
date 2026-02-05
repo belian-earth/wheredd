@@ -68,17 +68,15 @@ carbon_proj_release_url <- function(tag = "latest") {
 #' @examples
 #' \dontrun{
 #' # Get URLs for all continents
-#' urls <- carbon_proj_src_urls()
+#' urls <- carbon_proj_source_urls()
 #'
 #' # Get URLs for specific continents
-#' urls <- carbon_proj_src_urls(c("africa", "asia"))
+#' urls <- carbon_proj_source_urls(c("africa", "asia"))
 #'
-#' # Get URL for single continent
-#' url <- carbon_proj_src_urls("europe")
 #' }
 #'
 #' @export
-carbon_proj_src_urls <- function(
+carbon_proj_source_urls <- function(
   continents = c(
     "africa",
     "asia",
