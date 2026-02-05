@@ -44,9 +44,13 @@ build_whereredd_info <- function(con, db_path) {
     ncols = ncols
   )
 
+  # Ensure cache directory exists before saving
+  cache_dir <- rappdirs::user_cache_dir("wheredd")
+  fs::dir_create(cache_dir)
+
   saveRDS(
     whereredd_info,
-    fs::path(rappdirs::user_cache_dir("wheredd"), "wheredd_info.rds")
+    fs::path(cache_dir, "wheredd_info.rds")
   )
 }
 
