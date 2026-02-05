@@ -1,6 +1,6 @@
 library(piggyback)
 
-tag <- "v0.1.0"
+tag <- "v0.2.0"
 
 piggyback::pb_release_create(
   repo = "belian-earth/wheredd",
