@@ -26,6 +26,12 @@ test_that("carbon_proj_release_url returns a URL", {
   skip_if_offline()
   skip_on_cran()
 
+  # Skip if no releases exist yet
+  skip_if(
+    length(piggyback::pb_list(repo = "belian-earth/wheredd")$tag) == 0,
+    "No GitHub releases available yet"
+  )
+
   url <- carbon_proj_release_url()
   expect_type(url, "character")
   expect_length(url, 1)
@@ -36,6 +42,12 @@ test_that("carbon_proj_release_url returns a URL", {
 test_that("carbon_proj_release_url validates tags", {
   skip_if_offline()
   skip_on_cran()
+
+  # Skip if no releases exist yet
+  skip_if(
+    length(piggyback::pb_list(repo = "belian-earth/wheredd")$tag) == 0,
+    "No GitHub releases available yet"
+  )
 
   expect_error(
     carbon_proj_release_url("nonexistent_tag_12345")

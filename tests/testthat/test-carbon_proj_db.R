@@ -55,6 +55,12 @@ test_that("carbon_proj_db creates database from release", {
   skip_if_offline()
   skip_on_cran()
 
+  # Skip if no releases exist yet
+  skip_if(
+    length(piggyback::pb_list(repo = "belian-earth/wheredd")$tag) == 0,
+    "No GitHub releases available yet"
+  )
+
   # Create temp directory for test database
   temp_dir <- withr::local_tempdir()
 
