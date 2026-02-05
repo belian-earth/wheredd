@@ -4,26 +4,29 @@
 \name{wheredd-package}
 \alias{wheredd}
 \alias{wheredd-package}
-\title{wheredd: Locate and Query Forest Carbon Project Boundaries}
+\title{wheredd: Access Forest Carbon Project Boundary Data}
 \description{
-The wheredd package provides tools to locate and query REDD+ (Reducing
-Emissions from Deforestation and Forest Degradation) and other forest carbon
-offset project locations worldwide. The package downloads and processes
-boundary data from the CECIL project's forest carbon boundaries dataset.
+Provides streamlined access to forest carbon offset project boundary data
+from the Akshata et al. (2024) forest carbon boundaries dataset, converted
+to parquet by Alex Logan and hosted on Source Cooperative. Creates a local
+DuckDB database with validated, cleaned project geometries from REDD+
+(Reducing Emissions from Deforestation and Forest Degradation) and other
+carbon offset projects worldwide.
+
+\strong{This package focuses on data access.} Analytical functionality is left
+to R's spatial and data analysis ecosystem (sf, dplyr, terra, etc.).
 }
 \details{
 \subsection{Main Features}{
-
-The wheredd package provides:
 \itemize{
-\item \strong{Database Creation}: Build a local DuckDB database of forest carbon
-project boundaries using \code{carbon_proj_db()}
+\item \strong{Database Creation}: Build a local DuckDB database using \code{carbon_proj_db()}
 \item \strong{Flexible Data Sources}: Choose between pre-processed GitHub releases
 (fast) or raw source data (fresh, with full geometry processing)
-\item \strong{Geometry Processing}: Automatic validation, cleaning, and conversion
-of project boundary geometries
-\item \strong{Spatial Queries}: Query projects by location, continent, or attributes
-using standard SQL or dplyr
+\item \strong{Geometry Processing}: Automatic validation, cleaning, and WKB conversion
+of project boundary geometries (points and polygons supported)
+\item \strong{Direct URLs}: Use \code{carbon_proj_release_url()} and
+\code{carbon_proj_source_urls()} to get download links without building the database
+\item \strong{Spatial Queries}: Query by continent, country, registry, or project attributes
 }
 }
 
@@ -31,37 +34,85 @@ using standard SQL or dplyr
 
 Build the database:
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{# Quick start with pre-processed data
+\if{html}{\out{<div class="sourceCode">}}\preformatted{library(wheredd)
+
+# Quick start with pre-processed data
 db_path <- carbon_proj_db()
 
 # Or build from source with full processing
 db_path <- carbon_proj_db(build_from = "source")
+
+# View database information
+whereredd_info()
 }\if{html}{\out{</div>}}
 
-Connect and query:
+Connect and query with standard DBI/dplyr workflows:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{library(DBI)
-con <- dbConnect(duckdb::duckdb(), dbdir = db_path)
-projects <- dbGetQuery(con, "SELECT * FROM carbon_projects LIMIT 10")
-dbDisconnect(con)
+library(dplyr)
+
+con <- dbConnect(duckdb::duckdb(), dbdir = db_path, read_only = TRUE)
+
+# Query with SQL
+projects <- dbGetQuery(con, "
+  SELECT * FROM carbon_projects
+  WHERE continent = 'africa' AND area_role = 'project'
+  LIMIT 10
+")
+
+# Or use dplyr
+projects <- tbl(con, "carbon_projects") |>
+  filter(continent == "africa", area_role == "project") |>
+  collect()
+
+dbDisconnect(con, shutdown = TRUE)
+}\if{html}{\out{</div>}}
+
+Work with spatial data:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{library(sf)
+
+# Convert WKB to sf
+projects_sf <- st_as_sf(projects, crs = 4326)
+plot(st_geometry(projects_sf))
 }\if{html}{\out{</div>}}
 }
 
-\subsection{Data Source}{
+\subsection{Data Structure}{
 
-Data is sourced from the CECIL project:
-\url{https://source.coop/cecil/forest-carbon-boundaries}
-}
-
-\subsection{Package Structure}{
+The database contains one table (\code{carbon_projects}) with:
 \itemize{
-\item \code{carbon_proj_db()}: Main function to build the database
-\item \code{carbon_proj_db_to_file()}: Export database to parquet format
-\item \code{whereredd_info()}: Display database metadata
-\item \code{carbon_proj_release_url()}: Get URL for pre-processed data
-\item \code{carbon_proj_src_urls()}: Get URLs for raw source data
+\item One row per project per area type (project/accounting/reference)
+\item Geometry stored as WKB BLOB for efficient storage
+\item Metadata: project name, registry, dates, country, etc.
+\item Ordered by: continent → country → id
 }
 }
+
+\subsection{Data Source and Attribution}{
+
+\strong{Original Publication:}
+Akshata Karnik, Jack B. Kilbride, Tristan R.H. Goodbody, Rachael Ross,
+Elias Ayrey (2024). Forest carbon boundaries dataset.
+Zenodo. \url{https://zenodo.org/records/11459391}
+
+\strong{Data Conversion:}
+Converted to parquet format by Alex Logan (June 5, 2024)
+
+\strong{Data Host:}
+Source Cooperative CECIL project
+\url{https://source.coop/cecil/forest-carbon-boundaries}
+
+\strong{License:} CC-BY 4.0
+}
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/belian-earth/wheredd}
+  \item Report bugs at \url{https://github.com/belian-earth/wheredd/issues}
+}
+
 }
 \author{
 \strong{Maintainer}: First Last \email{first.last@example.com}
