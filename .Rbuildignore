@@ -1,2 +1,4 @@
 ^wheredd\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^tools$
