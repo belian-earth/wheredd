@@ -2,3 +2,9 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^tools$
+^.*\.parquet$
+^LICENSE\.md$
+^figures$
+^scratch\.R$
+^.*\.claude$
+^\.github$
