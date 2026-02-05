@@ -31,22 +31,33 @@ test_that("carbon_proj_db creates database from source (europe only)", {
   expect_gt(n_rows, 0)
 
   # Check continent column
-  continents <- DBI::dbGetQuery(con, "SELECT DISTINCT continent FROM carbon_projects")$continent
+  continents <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT continent FROM carbon_projects"
+  )$continent
   expect_contains(continents, "europe")
   expect_length(continents, 1) # Should only have europe
 
   # Check area_role column exists and has expected values
-  area_roles <- DBI::dbGetQuery(con, "SELECT DISTINCT area_role FROM carbon_projects")$area_role
+  area_roles <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT area_role FROM carbon_projects"
+  )$area_role
   expect_true(all(area_roles %in% c("project", "accounting", "reference")))
 
-  # Check geometry_wkb column exists and is BLOB
+  # Check geometry column exists and is BLOB
   cols <- DBI::dbGetQuery(con, "DESCRIBE carbon_projects")
-  expect_contains(cols$column_name, "geometry_wkb")
+  expect_contains(cols$column_name, "geometry")
 
   # Check required columns exist
   expected_cols <- c(
-    "id", "project_name", "area_role", "registry_name",
-    "continent", "country", "geometry_wkb"
+    "id",
+    "project_name",
+    "area_role",
+    "registry_name",
+    "continent",
+    "country",
+    "geometry"
   )
   expect_true(all(expected_cols %in% cols$column_name))
 })
@@ -85,7 +96,10 @@ test_that("carbon_proj_db creates database from release", {
   expect_contains(tables, "carbon_projects")
 
   # Check filtering by continent worked
-  continents <- DBI::dbGetQuery(con, "SELECT DISTINCT continent FROM carbon_projects")$continent
+  continents <- DBI::dbGetQuery(
+    con,
+    "SELECT DISTINCT continent FROM carbon_projects"
+  )$continent
   expect_setequal(continents, c("europe", "oceania"))
 
   # Check data exists
@@ -169,7 +183,10 @@ test_that("carbon_proj_db_to_file exports database", {
 
   data <- DBI::dbGetQuery(
     con,
-    glue::glue_sql("SELECT COUNT(*) as n FROM read_parquet({export_path})", .con = con)
+    glue::glue_sql(
+      "SELECT COUNT(*) as n FROM read_parquet({export_path})",
+      .con = con
+    )
   )
   expect_gt(data$n, 0)
 })
