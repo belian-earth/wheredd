@@ -1,3 +1,66 @@
+#' Build Carbon Project Database
+#'
+#' @description
+#' Creates a local DuckDB database containing forest carbon project boundaries
+#' and metadata. The database can be built either from a pre-processed GitHub
+#' release (fast) or from source parquet files (slower, but with fresh data and
+#' full geometry processing).
+#'
+#' @param dest Directory path where the database will be created. If NULL
+#'   (default), uses the system cache directory via `rappdirs::user_cache_dir("wheredd")`.
+#' @param db_name Name of the database file (without extension). Default is "wheredd_db".
+#' @param continents Character vector of continent names to include. Valid values
+#'   are "africa", "asia", "europe", "north_america", "oceania", and "south_america".
+#'   Default is all continents. Multiple values are allowed.
+#' @param force Logical. If TRUE, removes and rebuilds existing database. If FALSE
+#'   (default), returns existing database path without rebuilding.
+#' @param build_from Character string specifying the data source. Either "release"
+#'   (default, downloads pre-processed data from GitHub releases - faster) or
+#'   "source" (processes raw parquet files with full geometry cleaning - slower).
+#' @param tag Character string specifying the GitHub release tag to use when
+#'   `build_from = "release"`. Default is "latest". Ignored when `build_from = "source"`.
+#'
+#' @return The file path to the created database, returned invisibly.
+#'
+#' @details
+#' The function creates a DuckDB database with the following structure:
+#' - One row per project per area type (project, accounting, reference)
+#' - Geometries stored as WKB blobs for efficient storage
+#' - Data ordered by continent, country, and project ID
+#'
+#' When `build_from = "release"`:
+#' - Downloads pre-processed parquet file from GitHub releases
+#' - Faster and simpler
+#' - Uses data as published in the specified release tag
+#'
+#' When `build_from = "source"`:
+#' - Fetches raw parquet files from source.coop
+#' - Applies geometry validation and cleaning
+#' - Converts from wide to long format
+#' - Slower but ensures fresh data processing
+#'
+#' @examples
+#' \dontrun{
+#' # Build from latest release (fast)
+#' db_path <- carbon_proj_db()
+#'
+#' # Build from source for Africa and Asia only
+#' db_path <- carbon_proj_db(
+#'   continents = c("africa", "asia"),
+#'   build_from = "source"
+#' )
+#'
+#' # Use a specific release version
+#' db_path <- carbon_proj_db(
+#'   tag = "v0.0.1",
+#'   build_from = "release"
+#' )
+#'
+#' # Force rebuild of existing database
+#' db_path <- carbon_proj_db(force = TRUE)
+#' }
+#'
+#' @export
 carbon_proj_db <- function(
   dest = NULL,
   db_name = "wheredd_db",
@@ -51,10 +114,7 @@ carbon_proj_db <- function(
     carbon_proj_db_src(con, continents)
   }
 
-  cli::cli_alert_success(
-    "Created REDD+ database at {.path
-   {db_path}}"
-  )
+  cli::cli_alert_success("Created REDD+ database at {.path {db_path}}")
 
   build_whereredd_info(con, db_path)
   whereredd_info()
@@ -63,6 +123,28 @@ carbon_proj_db <- function(
 }
 
 
+#' Build Database from GitHub Release
+#'
+#' @description
+#' Internal function that creates the database table by downloading a pre-processed
+#' parquet file from a GitHub release. This is the fast path for database creation.
+#'
+#' @param con A DBI connection object to the DuckDB database.
+#' @param continents Character vector of continent names to filter and include in
+#'   the database.
+#' @param tag Character string specifying which GitHub release tag to use.
+#'
+#' @return NULL (called for side effects - creates table in database)
+#'
+#' @details
+#' This function:
+#' 1. Retrieves the download URL for the specified release tag
+#' 2. Creates a table by reading the parquet file directly from the URL
+#' 3. Filters rows to include only the specified continents
+#' 4. Orders results by continent, country, and ID
+#'
+#' @noRd
+#' @keywords internal
 carbon_proj_db_release <- function(con, continents, tag) {
   url <- carbon_proj_release_url(tag = tag)
   q <- glue::glue_sql(
@@ -77,6 +159,47 @@ carbon_proj_db_release <- function(con, continents, tag) {
 }
 
 
+#' Build Database from Source Parquet Files
+#'
+#' @description
+#' Internal function that creates the database table by fetching and processing
+#' raw parquet files from source.coop. This involves full geometry validation,
+#' cleaning, and transformation from wide to long format.
+#'
+#' @param con A DBI connection object to the DuckDB database.
+#' @param continents Character vector of continent names to fetch and process.
+#'
+#' @return NULL (called for side effects - creates table in database)
+#'
+#' @details
+#' This function performs the following operations:
+#'
+#' **Geometry Processing:**
+#' 1. Validates geometries using ST_MakeValid
+#' 2. Extracts specific geometry types (points and polygons) from collections
+#' 3. Forces geometries to 2D (removes Z coordinates)
+#' 4. Converts to WKB (Well-Known Binary) format for efficient storage
+#'
+#' **Data Transformation:**
+#' 1. Reads parquet files for specified continents in parallel
+#' 2. Extracts continent name from filename
+#' 3. Pivots from wide format (3 geometry columns) to long format (1 geometry
+#'    column with area_role indicator)
+#' 4. Filters out empty geometries
+#' 5. Orders by continent, country, and ID
+#'
+#' **Area Roles:**
+#' - "project": The project boundary area
+#' - "accounting": The accounting region (if defined)
+#' - "reference": The reference region (if defined)
+#'
+#' @section Extensions:
+#' This function installs and loads the following DuckDB extensions:
+#' - `httpfs`: For reading parquet files from HTTPS URLs
+#' - `spatial`: For geometry processing functions
+#'
+#' @noRd
+#' @keywords internal
 carbon_proj_db_src <- function(
   con,
   continents
