@@ -13,9 +13,9 @@ coverage](https://codecov.io/gh/belian-earth/wheredd/graph/badge.svg)](https://a
 
 <!-- badges: end -->
 
-**wheredd** provides streamlined access to forest carbon offset project
-boundary data. The package builds a local DuckDB database from the
-[CECIL forest carbon boundaries
+**wheredd** is an R package that provides streamlined access to forest
+carbon project boundary data. The package builds a local DuckDB database
+from the [CECIL forest carbon boundaries
 dataset](https://source.coop/cecil/forest-carbon-boundaries), making it
 easy to query and analyze REDD+ and carbon offset project locations.
 
@@ -41,7 +41,7 @@ library(wheredd)
 
 # just get the urls and download yourself...
 carbon_proj_release_url()
-#> [1] "https://github.com/belian-earth/wheredd/releases/download/v0.0.1/forest_carbon_boundaries.parquet"
+#> [1] "https://github.com/belian-earth/wheredd/releases/download/v0.1.0/forest_carbon_boundaries.parquet"
 # or for access to the original source data urls...
 carbon_proj_source_urls()
 #> https://data.source.coop/cecil/forest-carbon-boundaries/africa.parquet
@@ -56,12 +56,11 @@ carbon_proj_source_urls()
 db_path <- carbon_proj_db()
 #> 
 #> ── wheredd Database Information ────────────────────────────────────────────────
-#> Database path:
-#> '/tmp/RtmpT11lTD/working_dir/RtmpFBlEmk/file241b12168d572/test_build_info.duckdb'
+#> Database path: '~/.cache/wheredd/wheredd_db.duckdb'
 #> Table name: carbon_projects
-#> Database created on: 2026-02-05 14:32:34.804495
+#> Database created on: 2026-02-05 17:36:26.629469
 #> Database size: 12K
-#> Number of records: 4
+#> Number of records: 694
 #> Number of columns: 16
 ```
 

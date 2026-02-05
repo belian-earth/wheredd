@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-**wheredd** provides streamlined access to forest carbon offset project boundary data. The package builds a local DuckDB database from the [CECIL forest carbon boundaries dataset](https://source.coop/cecil/forest-carbon-boundaries), making it easy to query and analyze REDD+ and carbon offset project locations.
+**wheredd** is an R package that provides streamlined access to forest carbon project boundary data. The package builds a local DuckDB database from the [CECIL forest carbon boundaries dataset](https://source.coop/cecil/forest-carbon-boundaries), making it easy to query and analyze REDD+ and carbon offset project locations.
 
 **This package focuses on data access.** Once you have the data, use standard R spatial and data analysis tools (sf, dplyr, terra, etc.) for your analysis workflows.
 
