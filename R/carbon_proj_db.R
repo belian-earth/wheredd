@@ -204,7 +204,7 @@ carbon_proj_db_src <- function(
   con,
   continents
 ) {
-  urls <- carbon_proj_src_urls(continents = continents)
+  urls <- carbon_proj_source_urls(continents = continents)
 
   # Define geometry columns
 
