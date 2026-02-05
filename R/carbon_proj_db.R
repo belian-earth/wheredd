@@ -175,10 +175,14 @@ carbon_proj_db_release <- function(con, continents, tag) {
 #' This function performs the following operations:
 #'
 #' **Geometry Processing:**
-#' 1. Validates geometries using ST_MakeValid
-#' 2. Extracts specific geometry types (points and polygons) from collections
-#' 3. Forces geometries to 2D (removes Z coordinates)
-#' 4. Converts to WKB (Well-Known Binary) format for efficient storage
+#' 1. Forces geometries to 2D (removes Z coordinates)
+#' 2. Validates 2D geometries using ST_MakeValid (fixes topology issues that may
+#'    appear after dimension reduction)
+#' 3. Detects geometry type and extracts appropriate features:
+#'    - Points from point geometries
+#'    - Polygons from polygon/collection geometries
+#' 4. Filters out empty results
+#' 5. Converts to WKB (Well-Known Binary) format for efficient storage
 #'
 #' **Data Transformation:**
 #' 1. Reads parquet files for specified continents in parallel
@@ -220,15 +224,21 @@ carbon_proj_db_src <- function(
   )
 
   clean_clause <- glue::glue(
-    "ST_MakeValid (
-       CASE
-         WHEN ST_GeometryType ({geom_cols}::GEOMETRY)::VARCHAR LIKE '%POINT%'
-           THEN ST_Force2D (ST_CollectionExtract ({geom_cols}::GEOMETRY, 1))
-         WHEN ST_GeometryType ({geom_cols}::GEOMETRY)::VARCHAR LIKE '%POLYGON%'
-           THEN ST_Force2D (ST_CollectionExtract ({geom_cols}::GEOMETRY, 3))
-         ELSE ST_Force2D ({geom_cols}::GEOMETRY)
-       END
-     ) AS {geom_cols}_clean"
+    "CASE
+       WHEN ST_GeometryType ({geom_cols}::GEOMETRY)::VARCHAR LIKE '%POINT%'
+         THEN ST_CollectionExtract (
+                ST_MakeValid (
+                  ST_Force2D ({geom_cols}::GEOMETRY)
+                ),
+                1
+              )
+       ELSE ST_CollectionExtract (
+              ST_MakeValid (
+                ST_Force2D ({geom_cols}::GEOMETRY)
+              ),
+              3
+            )
+     END AS {geom_cols}_clean"
   ) |>
     glue::glue_sql_collapse(sep = ",\n                   ")
 
@@ -267,9 +277,10 @@ carbon_proj_db_src <- function(
             processing_approach,
             pd_declined,
             filename,
-            ST_AsWKB ({geom_cols}_clean)::BLOB AS geometry_wkb
+            ST_AsWKB ({geom_cols}_clean)::BLOB AS geometry
        FROM cleaned
-      WHERE NOT ST_IsEmpty ({geom_cols}_clean)"
+      WHERE {geom_cols}_clean IS NOT NULL
+        AND NOT ST_IsEmpty ({geom_cols}_clean)"
   ) |>
     glue::glue_sql_collapse(sep = "\n\n     UNION ALL\n\n     ")
 
