@@ -5,26 +5,18 @@ Authors@R:
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
 Description: Provides streamlined access to forest carbon offset project
     boundary data from the Akshata, et al. (2024) forest carbon boundaries
-    dataset (<https://zenodo.org/records/11459391>), converted to parquet by
-    Alex Logan and hosted on Source Cooperative
-    (<https://source.coop/cecil/forest-carbon-boundaries>). Creates a local
-    DuckDB database with validated, cleaned project geometries from REDD+
-    (Reducing Emissions from Deforestation and Forest Degradation) and other
-    carbon offset projects worldwide. Enables spatial queries and filtering by
-    location, registry, or project attributes. Focuses on data access—analytical
-    functionality is left to R's spatial and data analysis ecosystem (sf,
-    dplyr, terra, etc.).
+    dataset (<https://zenodo.org/records/11459391>), converted to parquet
+    by Alex Logan and hosted on Source Cooperative
+    (<https://source.coop/cecil/forest-carbon-boundaries>). Creates a
+    local DuckDB database with validated, cleaned project geometries from
+    REDD+ (Reducing Emissions from Deforestation and Forest Degradation)
+    and other carbon offset projects worldwide. Enables spatial queries
+    and filtering by location, registry, or project attributes. Focuses on
+    data access—analytical functionality is left to R's spatial and data
+    analysis ecosystem (sf, dplyr, terra, etc.).
 License: Apache License (>= 2)
 URL: https://github.com/belian-earth/wheredd
 BugReports: https://github.com/belian-earth/wheredd/issues
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
-Suggests: 
-    DBI,
-    duckdb,
-    testthat (>= 3.0.0),
-    withr
 Imports: 
     cli,
     fs,
@@ -32,4 +24,13 @@ Imports:
     piggyback,
     rappdirs,
     rlang
+Suggests: 
+    DBI,
+    duckdb,
+    duckplyr,
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
