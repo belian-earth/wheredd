@@ -34,7 +34,7 @@ pak::pak("belian-earth/wheredd")
 
 ## Quick Start
 
-Build the database (downloads pre-processed data from GitHub releases):
+### Just get the urls:
 
 ``` r
 library(wheredd)
@@ -50,34 +50,51 @@ carbon_proj_source_urls()
 #> https://data.source.coop/cecil/forest-carbon-boundaries/north_america.parquet
 #> https://data.source.coop/cecil/forest-carbon-boundaries/oceania.parquet
 #> https://data.source.coop/cecil/forest-carbon-boundaries/south_america.parquet
-
-
-# Create local database
-db_path <- carbon_proj_db()
-#> 
-#> ── wheredd Database Information ────────────────────────────────────────────────
-#> Database path: '~/.cache/wheredd/wheredd_db.duckdb'
-#> Table name: carbon_projects
-#> Database created on: 2026-02-05 21:19:49.476981
-#> Database size: 12K
-#> Number of records: 694
-#> Number of columns: 16
 ```
 
-## Usage
+### Read directly from source
 
-### Connect and query
+{duckplyr} probably provides the simplest and most familiar (to R users)
+way to access the data, but you can also read the parquet files directly
+with arrow or other tools if you prefer.
 
-Use standard DBI/duckdb/duckplyr/dplyr workflows:
+``` r
+library(duckplyr)
+
+read_parquet_duckdb(
+  carbon_proj_release_url()
+) |>
+  filter(continent == "europe")
+#> # A duckplyr data frame: 16 variables
+#>   id     project_name area_role registry_name methodology project_type continent
+#>   <chr>  <chr>        <chr>     <chr>         <chr>       <chr>        <chr>    
+#> 1 VCS25… ACAP Albani… project   Verra         AR-ACM0003  ARR          europe   
+#> 2 VCS25… ACAP Albani… accounti… Verra         AR-ACM0003  ARR          europe   
+#> 3 VCS33… Westphalen … project   Verra         VM0012      IFM          europe   
+#> 4 VCS23… Rotunda For… project   Verra         VM0012      IFM          europe   
+#> # ℹ 9 more variables: country <chr>, project_developer <chr>,
+#> #   project_start_date <date>, project_end_date <date>, entry_date <date>,
+#> #   processing_approach <chr>, pd_declined <chr>, filename <chr>,
+#> #   geometry <list>
+```
+
+### Create local database
+
+There is also a helper function to create a local DuckDB database for
+more complex queries and spatial operations. This will download the
+data, process geometries, and create an optimized database file on your
+machine.
 
 ``` r
 library(DBI)
-library(dplyr)
-library(duckplyr)
-# Connect to database
-con <- dbConnect(duckdb::duckdb(), dbdir = db_path, read_only = TRUE)
+library(duckdb)
+# Create local database
+db_path <- carbon_proj_db()
 
-# Query with SQL
+# Connect to database
+con <- dbConnect(duckdb(), dbdir = db_path, read_only = TRUE)
+
+# Query with SQL via DBI
 projects <- dbGetQuery(con, "
   SELECT * FROM carbon_projects
   WHERE continent = 'africa' AND area_role = 'project'
@@ -85,8 +102,8 @@ projects <- dbGetQuery(con, "
 ")
 
 # Or use d(uck)plyr
-projects <- tbl(con, "carbon_projects") |>
-  filter(continent == "africa", area_role == "project") |>
+projects <- read_sql_duckdb("SELECT * FROM carbon_projects", con =  con) |>
+  filter(continent == "africa", area_role == "project") |> 
   collect()
 
 projects
@@ -105,20 +122,21 @@ projects
 #> 10 GS11… JOil Jatrop… project   Gold Standard Gold Stand… ARR          africa   
 #> # ℹ 62 more rows
 #> # ℹ 9 more variables: country <chr>, project_developer <chr>,
-#> #   project_start_date <chr>, project_end_date <chr>, entry_date <chr>,
+#> #   project_start_date <date>, project_end_date <date>, entry_date <date>,
 #> #   processing_approach <chr>, pd_declined <chr>, filename <chr>,
 #> #   geometry <list>
 
 dbDisconnect(con, shutdown = TRUE)
 ```
 
-### Work with spatial data
+### Geometries are fully compatible with sf/gdal/QGIS
 
-Convert WKB geometries to sf objects:
+The WKB geometries can be directly interpreted by sf on read so
+converting to an sf object is straightforward (FYI you can also just
+download the file parquet file and drop it into QGIS):
 
 ``` r
 library(sf)
-#> Linking to GEOS 3.12.2, GDAL 3.12.1, PROJ 9.4.1; sf_use_s2() is TRUE
 
 # Read WKB geometry column as sf
 projects_sf <- projects |>

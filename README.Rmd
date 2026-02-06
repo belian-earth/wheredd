@@ -9,7 +9,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  message = FALSE
 )
 ```
 
@@ -38,7 +39,7 @@ pak::pak("belian-earth/wheredd")
 
 ## Quick Start
 
-Build the database (downloads pre-processed data from GitHub releases):
+### Just get the urls:
 
 ```{r quickstart}
 library(wheredd)
@@ -48,26 +49,36 @@ carbon_proj_release_url()
 # or for access to the original source data urls...
 carbon_proj_source_urls()
 
+```
 
+### Read directly from source
+
+{duckplyr} probably provides the simplest and most familiar (to R users) way to access the data, but you can also read the parquet files directly with arrow or other tools if you prefer.
+
+```{r}
+library(duckplyr)
+
+read_parquet_duckdb(
+  carbon_proj_release_url()
+) |>
+  filter(continent == "europe")
+```
+
+
+### Create local database
+
+There is also a helper function to create a local DuckDB database for more complex queries and spatial operations. This will download the data, process geometries, and create an optimized database file on your machine.
+
+```{r}
+library(DBI)
+library(duckdb)
 # Create local database
 db_path <- carbon_proj_db()
 
-```
-
-## Usage
-
-### Connect and query
-
-Use standard DBI/duckdb/duckplyr/dplyr workflows:
-
-```{r usage, message=FALSE}
-library(DBI)
-library(dplyr)
-library(duckplyr)
 # Connect to database
-con <- dbConnect(duckdb::duckdb(), dbdir = db_path, read_only = TRUE)
+con <- dbConnect(duckdb(), dbdir = db_path, read_only = TRUE)
 
-# Query with SQL
+# Query with SQL via DBI
 projects <- dbGetQuery(con, "
   SELECT * FROM carbon_projects
   WHERE continent = 'africa' AND area_role = 'project'
@@ -75,8 +86,8 @@ projects <- dbGetQuery(con, "
 ")
 
 # Or use d(uck)plyr
-projects <- tbl(con, "carbon_projects") |>
-  filter(continent == "africa", area_role == "project") |>
+projects <- read_sql_duckdb("SELECT * FROM carbon_projects", con =  con) |>
+  filter(continent == "africa", area_role == "project") |> 
   collect()
 
 projects
@@ -84,9 +95,10 @@ projects
 dbDisconnect(con, shutdown = TRUE)
 ```
 
-### Work with spatial data
+### Geometries are fully compatible with sf/gdal/QGIS
 
-Convert WKB geometries to sf objects:
+The WKB geometries can be directly interpreted by sf on read so converting to 
+an sf object is straightforward (FYI you can also just download the file parquet file and drop it into QGIS):
 
 ```{r spatial}
 library(sf)
